@@ -67,7 +67,7 @@ def value_iteration(iterations, gamma):
 
     return values
 
-if __name__ == "__main__":
+def run_gridworld():
     print(f"POLICY EVALUATION")
     values = policy_evaluation(100, 0.9)
     print(values)
