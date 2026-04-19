@@ -19,8 +19,15 @@ REWARDS = [
     [-50, -50,   0, 0, 10],
 ]
 
+WORLD_DIMENSIONS = (len(WORLD), len(WORLD[0]))
+
+# Basic checks
+assert(len(REWARDS) == len(WORLD)) # Ensures the WORLD and REWARDS nb of rows is the same
+assert(len(set(map(lambda row: len(row), WORLD))) == 1) # Ensures the WORLD nb of columns is the same per row
+assert(len(REWARDS[0]) == len(WORLD[0])) # Ensures the WORLD and REWARDS nb of columns is the same
+
 def policy_evaluation(iterations, gamma):
-    values = np.zeros((5, 5), dtype=float)
+    values = np.zeros(WORLD_DIMENSIONS, dtype=float)
     values[4][4] = REWARDS[4][4]
 
     for i in range(iterations):
@@ -44,7 +51,7 @@ def policy_evaluation(iterations, gamma):
     return values
 
 def value_iteration(iterations, gamma):
-    values = np.zeros((5, 5), dtype=float)
+    values = np.zeros(WORLD_DIMENSIONS, dtype=float)
     values[4][4] = REWARDS[4][4]
 
     for i in range(iterations):
