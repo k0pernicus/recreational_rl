@@ -1,0 +1,9 @@
+[project]
+name = "recreational_rl"
+version = "0.1.0"
+description = "Recreational Reinforcement Learning exercises"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "numpy>=2.4.4",
+]
