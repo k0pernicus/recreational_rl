@@ -4,11 +4,11 @@ START = "S"
 OUTPUT = "O"
 
 WORLD = [
-    [START, "", "", "", ""],
-    ["", "", "", "", ""],
-    ["", "", "", "", ""],
-    ["", "", "", "", ""],
-    ["", "", "", "", OUTPUT],
+    [START, "",  "", "",    "x"],
+    ["",    "",  "", "",    "x"],
+    ["",    "", "x", "",     ""],
+    ["",    "",  "", "",     ""],
+    ["x",  "x",  "", "", OUTPUT],
 ]
 
 REWARDS = [
@@ -74,6 +74,44 @@ def value_iteration(iterations, gamma):
 
     return values
 
+def td_lambda(episodes, learning_rate, gamma, lambda_p):
+    """
+    Evaluating state-values V(s) (Prediction)
+    """
+    if lambda_p < 0.0 or lambda_p > 1.0:
+        raise(f"lambda parameter of td_lambda should be between 0 and 1, got {lambda_p}")
+
+    values = np.zeros(WORLD_DIMENSIONS, dtype=float)
+
+    for i in range(episodes):
+        # Start the agent at random place, each time you run a new episode
+        r, c = np.random.randint(0, len(WORLD)), np.random.randint(0, len(WORLD[0]))
+        if r == c == (len(WORLD[0]) - 1): c = np.random.random_integers(0, len(WORLD[0]) - 1) # Do not start with the OUTPUT
+        eligibility_traces = np.zeros(WORLD_DIMENSIONS, dtype=float) # keep a trace of all footprints of the agent
+        while True:
+            if WORLD[r][c] == OUTPUT: break # begin another episode
+            # do not check for 'x' as those are not terminal states, only OUTPUT is
+
+            possible_neighbors = [
+                (r-1, c), (r+1, c), (r, c-1), (r, c+1)
+            ]
+            possible_neighbors = list(filter(lambda c: c[0] >= 0 and c[0] < len(WORLD) and c[1] >= 0 and c[1] < len(WORLD[0]), possible_neighbors))
+            np.random.shuffle(possible_neighbors)
+            nr, nc = possible_neighbors[0]
+
+            t_reward = REWARDS[nr][nc] # transition reward
+            td_error = t_reward + gamma * values[nr][nc] - values[r][c]
+            eligibility_traces[r][c] += 1
+
+            r, c = nr, nc
+
+            for wr in range(len(WORLD)):
+                for wc in range(len(WORLD[0])):
+                    values[wr][wc] = values[wr][wc] + learning_rate * td_error * eligibility_traces[wr][wc] # update the value
+                    eligibility_traces[wr][wc] = eligibility_traces[wr][wc] * lambda_p * gamma # fade the footprints
+
+    return values
+
 def run_gridworld():
     print(f"POLICY EVALUATION")
     values = policy_evaluation(100, 0.9)
@@ -81,4 +119,8 @@ def run_gridworld():
     print(f"=" * 80)
     print(f"VALUE ITERATION")
     values = value_iteration(100, 0.9)
+    print(values)
+    print(f"=" * 80)
+    print(f"TD-Lambda")
+    values = td_lambda(5000, learning_rate=0.05, gamma=0.9, lambda_p=0.5)
     print(values)
