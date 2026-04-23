@@ -39,13 +39,13 @@ def get_action(r, c, q_table, epsilon):
         # exploitation
         for direction in Direction:
             if direction == Direction.NORTH:
-                if q_table[r][c][direction.value] > adirection[0]: adirection = (q_table[r][c][direction.value], Direction.NORTH)
+                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.NORTH)
             if direction == Direction.SOUTH:
-                if q_table[r][c][direction.value] > adirection[0]: adirection = (q_table[r][c][direction.value], Direction.SOUTH)
+                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.SOUTH)
             if direction == Direction.EAST:
-                if q_table[r][c][direction.value] > adirection[0]: adirection = (q_table[r][c][direction.value], Direction.EAST)
+                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.EAST)
             if direction == Direction.WEST:
-                if q_table[r][c][direction.value] > adirection[0]: adirection = (q_table[r][c][direction.value], Direction.WEST)
+                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.WEST)
         return adirection[1]
     else:
         # exploration
@@ -62,11 +62,11 @@ def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
     # Q(s,a) = Q(s,a) + alpha * [ Rt+1 + gamma * Q(st, qt) - Q(s, a) ]
 
     # 4 actions: NORTH, SOUTH, EAST, WEST
-    q_table = np.zeros((_W_H, _W_W, len(Direction)), dtype=float)
+    q_table = np.zeros((len(Direction), _W_H, _W_W), dtype=float)
 
     for episode in range(episodes):
         (r, c) = START_COORDINATES
-        eligibility_traces = np.zeros((_W_H, _W_W, len(Direction)), dtype=float)
+        eligibility_traces = np.zeros((len(Direction), _W_H, _W_W), dtype=float)
         steps = 0
 
         # Take the first action using epsilon-greedy
@@ -98,10 +98,10 @@ def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
             next_action = get_action(nr, nc, q_table, epsilon)
 
             # First, add +1 to the trace exactly where the agent is standing right now
-            eligibility_traces[r][c][current_action.value] += 1
+            eligibility_traces[current_action.value][r][c] += 1
 
             # compute theta and q_table update
-            theta = STEP_REWARD + gamma * q_table[nr][nc][next_action.value] - q_table[r][c][current_action.value]
+            theta = STEP_REWARD + gamma * q_table[next_action.value][nr][nc] - q_table[current_action.value][r][c]
             q_table += (theta * learning_rate * eligibility_traces)
 
             # Then, fade the entire 3D matrix by multiplying it all by y * lambda
