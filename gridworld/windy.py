@@ -114,9 +114,62 @@ def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
 
     return q_table
 
+def evaluate_policy(q_table):
+    r, c = START_COORDINATES
+    path = []
+    steps = 0
+    max_steps = 100  # Infinite loop protection
+
+    print("\n--- Evaluating Optimal Policy ---")
+    while steps < max_steps:
+        path.append((r, c))
+
+        if WORLD[r][c] == END:
+            break
+
+        # 100% greedy action (epsilon <= 0 guarantees no exploration)
+        action = get_action(r, c, q_table, epsilon=-1.0)
+
+        nr, nc = r, c
+        # Apply the action's intended movement
+        if action == Direction.NORTH: nr -= 1
+        elif action == Direction.SOUTH: nr += 1
+        elif action == Direction.WEST: nc -= 1
+        elif action == Direction.EAST: nc += 1
+
+        # Apply the wind and clamp boundaries
+        nr -= WINDY[c]
+        nr = max(0, min(nr, _W_H - 1))
+        nc = max(0, min(nc, _W_W - 1))
+
+        r, c = nr, nc
+        steps += 1
+
+    if steps >= max_steps:
+        print("Failed to find the exit within the step limit. The agent might be trapped.")
+    else:
+        print(f"Optimal path reached in {len(path) - 1} steps!\n")
+
+    # Visualizing the path on the board
+    visual_board = [["." if cell == "" else cell for cell in row] for row in WORLD]
+
+    for (pr, pc) in path:
+        if visual_board[pr][pc] == ".": visual_board[pr][pc] = "*"
+
+    # Ensure S and E are still clearly marked
+    visual_board[START_COORDINATES[0]][START_COORDINATES[1]] = START
+
+    # Print the board
+    for row in visual_board:
+        print(" ".join(f"{cell:>2}" for cell in row))
+
+    return path
+
 def run_windy():
+    # Train the agent
     sarsa_q_table = sarsa_lambda(1000, 0.05, 0.9, 0.5)
-    print(sarsa_q_table)
+    # Test the agent
+    evaluate_policy(sarsa_q_table)
 
     # Q-Learning (off-policy)
     # Q(s,a) = Q(s,a) + alpha * ( Rt+1 + argmax(gamma * maxQ(st, qt) - Q(s, a)) )
