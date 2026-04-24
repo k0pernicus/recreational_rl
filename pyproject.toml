@@ -15,6 +15,7 @@ dependencies = [
 [project.scripts]
 run-gridworld = "gridworld.gridworld:run_gridworld"
 run-windy = "gridworld.windy:run_windy"
+run-kings-windy = "gridworld.kings_windy:run_kings_windy"
 
 [tool.hatch.build.targets.wheel]
 packages = ["gridworld"]
