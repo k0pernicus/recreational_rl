@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 from enum import Enum
 
@@ -166,11 +167,30 @@ def evaluate_policy(q_table):
     return path
 
 def run_windy():
-    # Train the agent
-    sarsa_q_table = sarsa_lambda(1000, 0.05, 0.9, 0.5)
-    # Test the agent
-    evaluate_policy(sarsa_q_table)
+    parser = argparse.ArgumentParser(description="Run Windy Gridworld")
+    subparsers = parser.add_subparsers(dest="command", help="Sub-command to run")
 
-    # Q-Learning (off-policy)
-    # Q(s,a) = Q(s,a) + alpha * ( Rt+1 + argmax(gamma * maxQ(st, qt) - Q(s, a)) )
-    pass
+    # SARSA subcommand
+    sarsa_parser = subparsers.add_parser("sarsa", help="Run SARSA-lambda")
+    sarsa_parser.add_argument("--episodes", type=int, default=100, help="Number of episodes to train")
+    sarsa_parser.add_argument("--lr", type=float, default=0.05, help="Learning rate")
+    sarsa_parser.add_argument("--gamma", type=float, default=0.9, help="Discount factor (gamma)")
+    sarsa_parser.add_argument("--lambda", type=float, default=0.5, dest="lambda_p", help="Trace decay (lambda)")
+    sarsa_parser.add_argument("--epsilon", type=float, default=0.1, help="Exploration rate (epsilon)")
+
+    # Q-Learning subcommand (placeholder)
+    q_learning_parser = subparsers.add_parser("q-learning", help="Run Q-Learning")
+    # Add arguments for Q-learning when implemented
+
+    args = parser.parse_args()
+
+    if args.command == "sarsa":
+        # Train the agent
+        sarsa_q_table = sarsa_lambda(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon)
+        # Test the agent
+        evaluate_policy(sarsa_q_table)
+    elif args.command == "q-learning":
+        print("Q-learning subcommand is not yet implemented.")
+    else:
+        parser.print_help()
+
