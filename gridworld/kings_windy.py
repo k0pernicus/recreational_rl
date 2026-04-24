@@ -286,6 +286,3 @@ def run_kings_windy():
         evaluate_policy(q_learning_table)
     else:
         parser.print_help()
-
-if __name__ == "__main__":
-    sarsa_lambda(1000, 0.05, 0.9, 0.5, 0.1)
