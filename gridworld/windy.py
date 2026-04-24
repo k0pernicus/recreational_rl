@@ -6,13 +6,13 @@ START = "S"
 END = "E"
 
 WORLD = [
-    ["",    "", "", "", "", "", "", "", "",  ""],
-    ["",    "", "", "", "", "", "", "", "",  ""],
-    ["",    "", "", "", "", "", "", "", "",  ""],
-    [START, "", "", "", "", "", "", "", "", END],
-    ["",    "", "", "", "", "", "", "", "",  ""],
-    ["",    "", "", "", "", "", "", "", "",  ""],
-    ["",    "", "", "", "", "", "", "", "",  ""]
+    ["",    "", "", "", "", "", "", "",  "",  ""],
+    ["",    "", "", "", "", "", "", "",  "",  ""],
+    ["",    "", "", "", "", "", "", "",  "",  ""],
+    [START, "", "", "", "", "", "", "",  "",  END],
+    ["",    "", "", "", "", "", "", "",  "",  ""],
+    ["",    "", "", "", "", "", "", "",  "",  ""],
+    ["",    "", "", "", "", "", "", "",  "",  ""]
 ]
 WORLD_DIMENSIONS = (len(WORLD), len(WORLD[0]))
 _W_H, _W_W = WORLD_DIMENSIONS[0], WORLD_DIMENSIONS[1]
@@ -36,21 +36,12 @@ assert(WORLD[START_COORDINATES[0]][START_COORDINATES[1]] == START)
 
 def get_action(r, c, q_table, epsilon):
     adirection = (-float(10000), Direction.NORTH)
-    if np.random.rand() > epsilon:
-        # exploitation
-        for direction in Direction:
-            if direction == Direction.NORTH:
-                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.NORTH)
-            if direction == Direction.SOUTH:
-                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.SOUTH)
-            if direction == Direction.EAST:
-                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.EAST)
-            if direction == Direction.WEST:
-                if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], Direction.WEST)
-        return adirection[1]
-    else:
-        # exploration
-        return np.random.choice(list(Direction))
+    # exploration
+    if np.random.rand() <= epsilon: return np.random.choice(list(Direction))
+    # exploitation
+    for direction in Direction:
+        if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], direction)
+    return adirection[1]
 
 
 def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
@@ -87,6 +78,7 @@ def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
             elif current_action == Direction.SOUTH: nr += 1
             elif current_action == Direction.WEST: nc -= 1
             elif current_action == Direction.EAST: nc += 1
+            else: assert(False) # debug
 
             # Apply the wind based on the column we started in,
             # and clamp the coordinates so the agent cannot fall off the grid boundaries
@@ -119,11 +111,15 @@ def evaluate_policy(q_table):
     r, c = START_COORDINATES
     path = []
     steps = 0
-    max_steps = 100  # Infinite loop protection
+    visited = set() # infinite loop protection
 
     print("\n--- Evaluating Optimal Policy ---")
-    while steps < max_steps:
+    while True:
+        if (r, c) in visited:
+            print("/!\ Found visited state - stopping")
+            break
         path.append((r, c))
+        visited.add((r, c))
 
         if WORLD[r][c] == END:
             break
@@ -146,10 +142,7 @@ def evaluate_policy(q_table):
         r, c = nr, nc
         steps += 1
 
-    if steps >= max_steps:
-        print("Failed to find the exit within the step limit. The agent might be trapped.")
-    else:
-        print(f"Optimal path reached in {len(path) - 1} steps!\n")
+    print(f"Optimal path reached in {len(path) - 1} steps!\n")
 
     # Visualizing the path on the board
     visual_board = [["." if cell == "" else cell for cell in row] for row in WORLD]
