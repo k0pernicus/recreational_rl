@@ -255,6 +255,7 @@ def run_kings_windy():
     # SARSA subcommand
     sarsa_parser = subparsers.add_parser("sarsa", help="Run SARSA-lambda")
     sarsa_parser.add_argument("--episodes", type=int, default=100, help="Number of episodes to train")
+    sarsa_parser.add_argument("--max-steps-per-episode", type=int, default=2000, help="Maximum number of steps per episode")
     sarsa_parser.add_argument("--lr", type=float, default=0.05, help="Learning rate")
     sarsa_parser.add_argument("--gamma", type=float, default=0.9, help="Discount factor (gamma)")
     sarsa_parser.add_argument("--lambda", type=float, default=0.5, dest="lambda_p", help="Trace decay (lambda)")
@@ -263,6 +264,7 @@ def run_kings_windy():
     # Q-Learning subcommand
     q_learning_parser = subparsers.add_parser("q-learning", help="Run Q-Learning")
     q_learning_parser.add_argument("--episodes", type=int, default=100, help="Number of episodes to train")
+    q_learning_parser.add_argument("--max-steps-per-episode", type=int, default=2000, help="Maximum number of steps per episode")
     q_learning_parser.add_argument("--lr", type=float, default=0.05, help="Learning rate")
     q_learning_parser.add_argument("--gamma", type=float, default=0.9, help="Discount factor (gamma)")
     q_learning_parser.add_argument("--lambda", type=float, default=0.5, dest="lambda_p", help="Trace decay (lambda)")
@@ -273,13 +275,13 @@ def run_kings_windy():
     if args.command == "sarsa":
         print(f"SARSA")
         # Train the agent
-        sarsa_q_table = sarsa_lambda(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon)
+        sarsa_q_table = sarsa_lambda(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon, args.max_steps_per_episode)
         # Test the agent
         evaluate_policy(sarsa_q_table)
     elif args.command == "q-learning":
         print(f"Q-Learning")
         # Train the agent
-        q_learning_table = q_learning(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon)
+        q_learning_table = q_learning(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon, args.max_steps_per_episode)
         # Test the agent
         evaluate_policy(q_learning_table)
     else:
