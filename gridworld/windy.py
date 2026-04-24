@@ -80,7 +80,6 @@ def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
 
         # Take the first action using epsilon-greedy
         current_action = get_action(r, c, q_table, epsilon)
-        print(f"Choosing first direction for episode {episode}: {current_action}")
 
         while True:
             # SARSA mathematically requires to know two actions to compute the TD error:
@@ -135,7 +134,6 @@ def q_learning(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
 
         # Take the first action using epsilon-greedy
         current_action = get_action(r, c, q_table, epsilon)
-        print(f"Choosing first direction for episode {episode}: {current_action}")
 
         while True:
             if WORLD[r][c] == END: break # stop as we reached the end
@@ -180,10 +178,10 @@ def evaluate_policy(q_table):
     steps = 0
     visited = set() # infinite loop protection
 
-    print("\n--- Evaluating Optimal Policy ---")
+    print("--- Evaluating Optimal Policy ---")
     while True:
         if (r, c) in visited:
-            print("/!\ Found visited state - stopping")
+            print("/!\\ Found visited state - stopping")
             break
         path.append((r, c))
         visited.add((r, c))
@@ -249,11 +247,13 @@ def run_windy():
     args = parser.parse_args()
 
     if args.command == "sarsa":
+        print(f"SARSA")
         # Train the agent
         sarsa_q_table = sarsa_lambda(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon)
         # Test the agent
         evaluate_policy(sarsa_q_table)
     elif args.command == "q-learning":
+        print(f"Q-Learning")
         # Train the agent
         q_learning_table = q_learning(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon)
         # Test the agent
