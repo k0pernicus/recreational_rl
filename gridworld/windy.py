@@ -44,6 +44,23 @@ def get_action(r, c, q_table, epsilon):
     return adirection[1]
 
 
+def get_action_and_wipe(r, c, q_table, epsilon):
+    """
+    Used for q_learning, to avoid trace bug (avoid to penalize previous good actions
+    is one action was random)
+    Returns the direction along with a boolean value to know if we have
+    to wipe eligibility traces
+    """
+    adirection = (-float(10000), Direction.NORTH)
+    # exploration
+    if np.random.rand() <= epsilon:
+        return np.random.choice(list(Direction)), True
+    # exploitation
+    for direction in Direction:
+        if q_table[direction.value][r][c] > adirection[0]: adirection = (q_table[direction.value][r][c], direction)
+    return adirection[1], False
+
+
 def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
     # SARSA (on-policy)
     # Q(s,a) = Q(s,a) + alpha * [ Rt+1 + gamma * Q(st, qt) - Q(s, a) ]
@@ -98,6 +115,56 @@ def sarsa_lambda(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
             q_table += (theta * learning_rate * eligibility_traces)
 
             # Then, fade the entire 3D matrix by multiplying it all by y * lambda
+            eligibility_traces *= (gamma * lambda_p)
+
+            steps += 1
+            r, c = nr, nc
+
+            current_action = next_action
+
+    return q_table
+
+def q_learning(episodes, learning_rate, gamma, lambda_p, epsilon = 0.1):
+    # 4 actions: NORTH, SOUTH, EAST, WEST
+    q_table = np.zeros((len(Direction), _W_H, _W_W), dtype=float)
+
+    for episode in range(episodes):
+        (r, c) = START_COORDINATES
+        eligibility_traces = np.zeros((len(Direction), _W_H, _W_W), dtype=float)
+        steps = 0
+
+        # Take the first action using epsilon-greedy
+        current_action = get_action(r, c, q_table, epsilon)
+        print(f"Choosing first direction for episode {episode}: {current_action}")
+
+        while True:
+            if WORLD[r][c] == END: break # stop as we reached the end
+
+            nr, nc = r, c
+            # Apply the CURRENT action's intended movement
+            if current_action == Direction.NORTH: nr -= 1
+            elif current_action == Direction.SOUTH: nr += 1
+            elif current_action == Direction.WEST: nc -= 1
+            elif current_action == Direction.EAST: nc += 1
+            else: assert(False) # debug
+
+            nr -= WINDY[c]
+            nr = max(0, min(nr, _W_H - 1))
+            nc = max(0, min(nc, _W_W - 1))
+
+            next_action, is_random_action = get_action_and_wipe(nr, nc, q_table, epsilon)
+            # Watkins trace-cut to prevent random exploratory steps
+            # from poisoning good trained data
+            if is_random_action: eligibility_traces.fill(0)
+
+            # First, add +1 to the trace exactly where the agent is standing right now
+            eligibility_traces[current_action.value][r][c] += 1
+
+            # compute theta and q_table update
+            # the main difference here is we take the best action among all four
+            theta = STEP_REWARD + gamma * np.max(q_table[:,nr,nc]) - q_table[current_action.value][r][c]
+            q_table += (theta * learning_rate * eligibility_traces)
+
             eligibility_traces *= (gamma * lambda_p)
 
             steps += 1
@@ -171,9 +238,13 @@ def run_windy():
     sarsa_parser.add_argument("--lambda", type=float, default=0.5, dest="lambda_p", help="Trace decay (lambda)")
     sarsa_parser.add_argument("--epsilon", type=float, default=0.1, help="Exploration rate (epsilon)")
 
-    # Q-Learning subcommand (placeholder)
+    # Q-Learning subcommand
     q_learning_parser = subparsers.add_parser("q-learning", help="Run Q-Learning")
-    # Add arguments for Q-learning when implemented
+    q_learning_parser.add_argument("--episodes", type=int, default=100, help="Number of episodes to train")
+    q_learning_parser.add_argument("--lr", type=float, default=0.05, help="Learning rate")
+    q_learning_parser.add_argument("--gamma", type=float, default=0.9, help="Discount factor (gamma)")
+    q_learning_parser.add_argument("--lambda", type=float, default=0.5, dest="lambda_p", help="Trace decay (lambda)")
+    q_learning_parser.add_argument("--epsilon", type=float, default=0.1, help="Exploration rate (epsilon)")
 
     args = parser.parse_args()
 
@@ -183,7 +254,10 @@ def run_windy():
         # Test the agent
         evaluate_policy(sarsa_q_table)
     elif args.command == "q-learning":
-        print("Q-learning subcommand is not yet implemented.")
+        # Train the agent
+        q_learning_table = q_learning(args.episodes, args.lr, args.gamma, args.lambda_p, args.epsilon)
+        # Test the agent
+        evaluate_policy(q_learning_table)
     else:
         parser.print_help()
 
